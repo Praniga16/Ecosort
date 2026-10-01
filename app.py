@@ -142,7 +142,8 @@ def predict():
         }), 400
 
     # Validate file extension
-    ext = os.path.splitext(file.filename)[1].lower()
+    ext = os.path.splitext(file.filename)[1].lower().lstrip(".")
+
     if ext not in ALLOWED_EXTENSIONS:
         return jsonify({
             "success": False,

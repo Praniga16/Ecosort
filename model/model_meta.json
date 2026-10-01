@@ -1,17 +1,35 @@
 {
-  "trained": true,
-  "model_name": "MobileNetV2 Transfer Learning",
-  "classes": [
-    "cardboard",
-    "glass",
-    "metal",
-    "paper",
-    "plastic",
-    "trash"
-  ],
-  "dataset_images": 60,
-  "val_accuracy": 100.0,
-  "val_loss": 0.2111,
-  "training_time_minutes": 0.8,
-  "trained_timestamp": "2026-09-29 12:37:11"
+    "model": "MobileNetV2 Transfer Learning",
+    "image_size": [
+        224,
+        224
+    ],
+    "classes": [
+        "cardboard",
+        "glass",
+        "metal",
+        "paper",
+        "plastic",
+        "trash"
+    ],
+    "num_classes": 6,
+    "validation_accuracy": 96.24,
+    "validation_loss": 0.2244,
+    "dataset_size": 2527,
+    "class_counts": {
+        "cardboard": 403,
+        "glass": 501,
+        "metal": 410,
+        "paper": 594,
+        "plastic": 482,
+        "trash": 137
+    },
+    "class_weights": {
+        "cardboard": 1.0451,
+        "glass": 0.8407,
+        "metal": 1.0272,
+        "paper": 0.709,
+        "plastic": 0.8738,
+        "trash": 3.0742
+    }
 }

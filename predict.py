@@ -1,215 +1,1030 @@
+
 import os
 import json
+
 import numpy as np
+import tensorflow as tf
+
 from PIL import Image
 
-# Import TensorFlow lazily or handle import errors gracefully
-try:
-    import tensorflow as tf
-    TF_AVAILABLE = True
-except ImportError:
-    TF_AVAILABLE = False
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE_DIR, "model", "waste_classifier.keras")
-META_PATH = os.path.join(BASE_DIR, "model", "model_meta.json")
+# ============================================================
+# PATHS
+# ============================================================
 
-# Classes in alphabetical order as formatted by Keras image_dataset_from_directory
-CLASS_NAMES = ["cardboard", "glass", "metal", "paper", "plastic", "trash"]
+BASE_DIR = os.path.dirname(
+    os.path.abspath(__file__)
+)
 
-CLASS_METADATA = {
+MODEL_DIR = os.path.join(
+    BASE_DIR,
+    "model"
+)
+
+MODEL_PATH = os.path.join(
+    MODEL_DIR,
+    "waste_classifier.keras"
+)
+
+CLASS_NAMES_PATH = os.path.join(
+    MODEL_DIR,
+    "class_names.json"
+)
+
+METADATA_PATH = os.path.join(
+    MODEL_DIR,
+    "metadata.json"
+)
+
+
+# ============================================================
+# WASTE INFORMATION
+# ============================================================
+
+WASTE_INFO = {
+
     "cardboard": {
         "name": "Cardboard",
         "category": "Recyclable",
         "icon": "📦",
-        "advice": "Flatten clean cardboard and place it in the appropriate recycling bin."
+        "color": "blue",
+        "advice": (
+            "Flatten clean cardboard and place it "
+            "in the appropriate recycling stream. "
+            "Remove excessive food contamination "
+            "and non-paper materials."
+        ),
+        "tip": (
+            "Keep cardboard clean and dry before "
+            "recycling."
+        )
     },
+
     "glass": {
         "name": "Glass",
         "category": "Recyclable",
         "icon": "🫙",
-        "advice": "Rinse glass containers and place them in glass recycling where available."
+        "color": "cyan",
+        "advice": (
+            "Empty and rinse glass containers. "
+            "Place them in a glass recycling stream "
+            "where accepted by your local facility."
+        ),
+        "tip": (
+            "Recycling rules for glass can vary "
+            "between locations."
+        )
     },
+
     "metal": {
         "name": "Metal",
         "category": "Recyclable",
         "icon": "🥫",
-        "advice": "Empty and rinse metal cans before recycling."
+        "color": "gray",
+        "advice": (
+            "Empty and rinse metal cans and containers "
+            "before placing them in the appropriate "
+            "recycling stream."
+        ),
+        "tip": (
+            "Check your local recycling guidelines "
+            "for accepted metal items."
+        )
     },
+
     "paper": {
         "name": "Paper",
         "category": "Recyclable",
         "icon": "📄",
-        "advice": "Keep paper clean and dry before placing it in paper recycling."
+        "color": "yellow",
+        "advice": (
+            "Keep paper clean and dry and place it "
+            "in an appropriate paper recycling stream."
+        ),
+        "tip": (
+            "Avoid mixing food-soiled paper with "
+            "clean recyclable paper."
+        )
     },
+
     "plastic": {
         "name": "Plastic",
         "category": "Recyclable",
         "icon": "🥤",
-        "advice": "Clean the plastic item and place it in the appropriate plastic recycling bin."
+        "color": "green",
+        "advice": (
+            "Empty and clean the plastic item before "
+            "placing it in a recycling stream where "
+            "that type of plastic is accepted."
+        ),
+        "tip": (
+            "Not every type of plastic is accepted "
+            "by every recycling facility."
+        )
     },
+
     "trash": {
         "name": "Trash",
         "category": "General Waste",
         "icon": "🗑️",
-        "advice": "Dispose of the item as general waste when it cannot be recycled."
+        "color": "red",
+        "advice": (
+            "This item was classified as general waste. "
+            "Dispose of it according to your local "
+            "waste-management guidelines."
+        ),
+        "tip": (
+            "When uncertain, check your local waste "
+            "collection guidance."
+        )
     }
+
 }
 
-ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
-MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
-_cached_model = None
+# ============================================================
+# MODEL LOADING
+# ============================================================
 
-
-def is_model_trained() -> bool:
-    """Check if the trained model file exists on disk."""
-    return os.path.exists(MODEL_PATH)
-
-
-def get_model_metadata() -> dict:
-    """Get metadata about the trained model if available."""
-    if os.path.exists(META_PATH):
-        try:
-            with open(META_PATH, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return {
-        "trained": is_model_trained(),
-        "model_name": "MobileNetV2 Transfer Learning",
-        "classes": CLASS_NAMES,
-        "val_accuracy": None
-    }
+_model = None
+_class_names = None
+_metadata = None
 
 
-def load_classifier_model():
-    """Load and cache the trained Keras model."""
-    global _cached_model
-    if _cached_model is not None:
-        return _cached_model
+def load_model():
 
-    if not is_model_trained():
+    global _model
+
+    if _model is not None:
+        return _model
+
+    if not os.path.exists(MODEL_PATH):
+
         raise FileNotFoundError(
-            "Model file not found at 'model/waste_classifier.keras'. "
-            "Please train the model using train.py before making real predictions."
+            "Trained model not found: "
+            f"{MODEL_PATH}"
         )
 
-    if not TF_AVAILABLE:
-        raise RuntimeError("TensorFlow is not installed in the environment.")
+    print(
+        "Loading EcoSort AI model..."
+    )
 
-    print(f"Loading MobileNetV2 waste classifier model from {MODEL_PATH}...")
-    _cached_model = tf.keras.models.load_model(MODEL_PATH)
-    print("Model loaded successfully!")
-    return _cached_model
+    _model = tf.keras.models.load_model(
+        MODEL_PATH
+    )
+
+    print(
+        "EcoSort AI model loaded successfully."
+    )
+
+    print(
+        f"Model output shape: "
+        f"{_model.output_shape}"
+    )
+
+    return _model
 
 
-def validate_image_file(file_path: str):
-    """Validate image file extension, size, and integrity."""
-    if not os.path.exists(file_path):
-        raise ValueError("Image file does not exist.")
+# ============================================================
+# CLASS MAPPING
+# ============================================================
 
-    ext = os.path.splitext(file_path)[1].lower()
-    if ext not in ALLOWED_EXTENSIONS:
-        raise ValueError("Please upload a valid JPG, PNG, or WEBP image.")
+def load_class_names():
 
-    file_size = os.path.getsize(file_path)
-    if file_size > MAX_FILE_SIZE:
-        raise ValueError("File size exceeds maximum limit of 10 MB.")
+    global _class_names
+
+    if _class_names is not None:
+        return _class_names
+
+
+    if not os.path.exists(
+        CLASS_NAMES_PATH
+    ):
+
+        raise FileNotFoundError(
+            "Class mapping not found: "
+            f"{CLASS_NAMES_PATH}"
+        )
+
+
+    with open(
+        CLASS_NAMES_PATH,
+        "r",
+        encoding="utf-8"
+    ) as file:
+
+        mapping = json.load(file)
+
+
+    # Convert:
+    #
+    # {
+    #   "0": "cardboard",
+    #   "1": "glass"
+    # }
+    #
+    # into:
+    #
+    # ["cardboard", "glass", ...]
+
 
     try:
-        with Image.open(file_path) as img:
-            img.verify()
-    except Exception as e:
-        raise ValueError(f"Corrupted or unreadable image file: {str(e)}")
+
+        indexes = sorted(
+            mapping.keys(),
+            key=lambda value: int(value)
+        )
+
+        _class_names = [
+            mapping[index]
+            for index in indexes
+        ]
+
+    except Exception as error:
+
+        raise ValueError(
+            "Invalid class_names.json: "
+            f"{error}"
+        )
 
 
-def preprocess_image(file_path: str) -> np.ndarray:
-    """Load image, convert to RGB, resize to 224x224, and apply MobileNetV2 preprocessing."""
+    if len(_class_names) != 6:
+
+        raise ValueError(
+            "Expected exactly 6 classes, "
+            f"found {len(_class_names)}."
+        )
+
+
+    print(
+        "Class mapping:"
+    )
+
+    for index, name in enumerate(
+        _class_names
+    ):
+
+        print(
+            f"  {index}: {name}"
+        )
+
+
+    return _class_names
+
+
+# ============================================================
+# METADATA
+# ============================================================
+
+def load_metadata():
+
+    global _metadata
+
+    if _metadata is not None:
+        return _metadata
+
+
+    if not os.path.exists(
+        METADATA_PATH
+    ):
+
+        print(
+            "Warning: metadata.json not found."
+        )
+
+        _metadata = {}
+
+        return _metadata
+
+
     try:
-        img = Image.open(file_path).convert("RGB")
-        img = img.resize((224, 224), Image.Resampling.BILINEAR)
-        img_array = np.array(img, dtype=np.float32)
-        img_batch = np.expand_dims(img_array, axis=0)
 
-        if TF_AVAILABLE:
-            processed_batch = tf.keras.applications.mobilenet_v2.preprocess_input(img_batch)
-        else:
-            # Fallback MobileNetV2 scaling [-1, 1] if TF module unavailable during standalone checks
-            processed_batch = (img_batch / 127.5) - 1.0
+        with open(
+            METADATA_PATH,
+            "r",
+            encoding="utf-8"
+        ) as file:
 
-        return processed_batch
-    except Exception as e:
-        raise ValueError(f"Failed to preprocess image: {str(e)}")
+            _metadata = json.load(file)
+
+    except Exception as error:
+
+        print(
+            "Warning: unable to read metadata:",
+            error
+        )
+
+        _metadata = {}
 
 
-def predict_waste(file_path: str) -> dict:
+    return _metadata
+
+
+# ============================================================
+# IMAGE PREPARATION
+# ============================================================
+
+def prepare_image(image_source):
+
     """
-    Validates, preprocesses, and classifies an image using the MobileNetV2 waste classifier.
-    Returns structured JSON dictionary with probabilities, advice, and confidence level.
+    Prepare an image for the trained model.
+
+    IMPORTANT:
+
+    The model itself already contains:
+
+        mobilenet_v2.preprocess_input()
+
+    Therefore we DO NOT call preprocess_input()
+    here.
+
+    The image remains in the 0-255 range.
     """
 
-    # 1. Check if model is trained
-    if not is_model_trained():
-        return {
-            "success": False,
-            "error": "Model not trained yet. Train the model using train.py before making real predictions.",
-            "model_loaded": False
+
+    # --------------------------------------------------------
+    # PIL image object
+    # --------------------------------------------------------
+
+    if isinstance(
+        image_source,
+        Image.Image
+    ):
+
+        image = image_source.copy()
+
+
+    # --------------------------------------------------------
+    # File path
+    # --------------------------------------------------------
+
+    elif isinstance(
+        image_source,
+        (str, os.PathLike)
+    ):
+
+        image = Image.open(
+            image_source
+        )
+
+
+    else:
+
+        raise TypeError(
+            "image_source must be a PIL Image "
+            "or a valid image file path."
+        )
+
+
+    # --------------------------------------------------------
+    # RGB
+    # --------------------------------------------------------
+
+    image = image.convert(
+        "RGB"
+    )
+
+
+    # --------------------------------------------------------
+    # Resize
+    # --------------------------------------------------------
+
+    image = image.resize(
+        (224, 224),
+        Image.Resampling.LANCZOS
+    )
+
+
+    # --------------------------------------------------------
+    # NumPy
+    # --------------------------------------------------------
+
+    image_array = np.asarray(
+        image,
+        dtype=np.float32
+    )
+
+
+    # --------------------------------------------------------
+    # Batch dimension
+    # --------------------------------------------------------
+
+    image_array = np.expand_dims(
+        image_array,
+        axis=0
+    )
+
+
+    # IMPORTANT:
+    #
+    # Do NOT normalize here.
+    #
+    # Do NOT call:
+    #
+    # preprocess_input()
+    #
+    # because the trained model performs
+    # MobileNetV2 preprocessing internally.
+    #
+
+
+    return image_array
+
+
+# ============================================================
+# CONFIDENCE LEVEL
+# ============================================================
+
+def get_confidence_level(
+    confidence
+):
+
+    if confidence >= 80:
+
+        return "High"
+
+    elif confidence >= 60:
+
+        return "Moderate"
+
+    else:
+
+        return "Low"
+
+
+# ============================================================
+# PREDICTION
+# ============================================================
+
+def predict_image(
+    image_source
+):
+
+    """
+    Predict a waste category.
+
+    Returns a dictionary suitable for
+    Flask JSON responses.
+    """
+
+
+    # --------------------------------------------------------
+    # Load everything
+    # --------------------------------------------------------
+
+    model = load_model()
+
+    class_names = load_class_names()
+
+    metadata = load_metadata()
+
+
+    # --------------------------------------------------------
+    # Prepare image
+    # --------------------------------------------------------
+
+    image_array = prepare_image(
+        image_source
+    )
+
+
+    print(
+        "\nRunning prediction..."
+    )
+
+
+    # --------------------------------------------------------
+    # Predict
+    # --------------------------------------------------------
+
+    predictions = model.predict(
+        image_array,
+        verbose=0
+    )
+
+
+    probabilities = predictions[0]
+
+
+    # --------------------------------------------------------
+    # Validate output
+    # --------------------------------------------------------
+
+    if len(probabilities) != len(
+        class_names
+    ):
+
+        raise ValueError(
+            "Model output count does not match "
+            "class mapping. "
+            f"Model: {len(probabilities)}, "
+            f"Classes: {len(class_names)}"
+        )
+
+
+    # --------------------------------------------------------
+    # Predicted index
+    # --------------------------------------------------------
+
+    predicted_index = int(
+        np.argmax(probabilities)
+    )
+
+
+    predicted_class = class_names[
+        predicted_index
+    ]
+
+
+    confidence = float(
+        probabilities[predicted_index]
+    ) * 100
+
+
+    # --------------------------------------------------------
+    # Confidence level
+    # --------------------------------------------------------
+
+    confidence_level = (
+        get_confidence_level(
+            confidence
+        )
+    )
+
+
+    # --------------------------------------------------------
+    # Sort all probabilities
+    # --------------------------------------------------------
+
+    score_items = []
+
+
+    for index, probability in enumerate(
+        probabilities
+    ):
+
+        class_name = class_names[
+            index
+        ]
+
+
+        score_items.append({
+
+            "class": class_name,
+
+            "name": WASTE_INFO.get(
+                class_name,
+                {}
+            ).get(
+                "name",
+                class_name.title()
+            ),
+
+            "probability": round(
+                float(probability) * 100,
+                2
+            )
+
+        })
+
+
+    score_items.sort(
+        key=lambda item: item[
+            "probability"
+        ],
+        reverse=True
+    )
+
+
+    # --------------------------------------------------------
+    # Waste information
+    # --------------------------------------------------------
+
+    info = WASTE_INFO.get(
+
+        predicted_class,
+
+        {
+
+            "name":
+                predicted_class.title(),
+
+            "category":
+                "Unknown",
+
+            "icon":
+                "♻",
+
+            "color":
+                "green",
+
+            "advice":
+                "Check local waste-management guidance.",
+
+            "tip":
+                "Follow local recycling instructions."
+
         }
 
-    # 2. Validate input image
-    validate_image_file(file_path)
+    )
 
-    # 3. Preprocess image
-    img_batch = preprocess_image(file_path)
 
-    # 4. Load model & Predict
-    model = load_classifier_model()
-    predictions = model.predict(img_batch, verbose=0)[0]
+    # --------------------------------------------------------
+    # Low confidence
+    # --------------------------------------------------------
 
-    # Convert predictions to float list and normalize
-    raw_scores = [float(p) for p in predictions]
-    sum_scores = sum(raw_scores) or 1.0
-    normalized_scores = [p / sum_scores for p in raw_scores]
+    is_uncertain = (
+        confidence < 50
+    )
 
-    # Map scores to class names
-    class_probabilities = {}
-    for idx, name in enumerate(CLASS_NAMES):
-        percent = round(normalized_scores[idx] * 100.0, 1)
-        class_probabilities[name] = percent
 
-    # Sort probabilities descending
-    sorted_scores = dict(sorted(class_probabilities.items(), key=lambda item: item[1], reverse=True))
+    if is_uncertain:
 
-    # Top class selection
-    top_class = list(sorted_scores.keys())[0]
-    top_confidence = sorted_scores[top_class]
+        display_name = (
+            "Uncertain Classification"
+        )
 
-    # Determine confidence level & message
-    if top_confidence > 80.0:
-        confidence_level = "High confidence"
-        confidence_tip = None
-    elif top_confidence >= 60.0:
-        confidence_level = "Moderate confidence"
-        confidence_tip = "Consider taking a closer photo for a higher confidence rating."
+        category = (
+            "Low Confidence"
+        )
+
+        advice = (
+            "The AI could not classify this "
+            "image confidently. Try taking a "
+            "clearer photo with better lighting "
+            "and a simpler background."
+        )
+
     else:
-        confidence_level = "Low confidence"
-        confidence_tip = "Try taking a clearer photo with better lighting and a simpler background."
 
-    meta = CLASS_METADATA.get(top_class, CLASS_METADATA["trash"])
+        display_name = info[
+            "name"
+        ]
+
+        category = info[
+            "category"
+        ]
+
+        advice = info[
+            "advice"
+        ]
+
+
+    # --------------------------------------------------------
+    # Final result
+    # --------------------------------------------------------
 
     result = {
-        "success": True,
-        "model_loaded": True,
-        "class": top_class,
-        "name": meta["name"],
-        "category": meta["category"],
-        "confidence": top_confidence,
-        "confidence_level": confidence_level,
-        "confidence_tip": confidence_tip,
-        "advice": meta["advice"],
-        "icon": meta["icon"],
-        "scores": sorted_scores
+
+        "success":
+            True,
+
+        "class":
+            predicted_class,
+
+        "name":
+            display_name,
+
+        "category":
+            category,
+
+        "confidence":
+            round(
+                confidence,
+                2
+            ),
+
+        "confidence_level":
+            confidence_level,
+
+        "confidence_tip":
+            (
+                "Excellent visual match."
+                if confidence >= 80
+                else
+                "Consider checking the image and lighting."
+                if confidence >= 60
+                else
+                "Retake the image with better lighting and a clear background."
+            ),
+
+        "is_uncertain":
+            is_uncertain,
+
+        "icon":
+            info.get(
+                "icon",
+                "♻"
+            ),
+
+        "color":
+            info.get(
+                "color",
+                "green"
+            ),
+
+        "advice":
+            advice,
+
+        "tip":
+            info.get(
+                "tip",
+                ""
+            ),
+
+        "scores":
+            score_items,
+
+        "model":
+            metadata.get(
+                "model_name",
+                "MobileNetV2"
+            )
+
     }
 
+
+    # --------------------------------------------------------
+    # Console logging
+    # --------------------------------------------------------
+
+    print(
+        f"Predicted: "
+        f"{predicted_class}"
+    )
+
+    print(
+        f"Confidence: "
+        f"{confidence:.2f}%"
+    )
+
+    print(
+        f"Level: "
+        f"{confidence_level}"
+    )
+
+
+    print(
+        "Top probabilities:"
+    )
+
+    for item in score_items[:3]:
+
+        print(
+            f"  "
+            f"{item['name']}: "
+            f"{item['probability']:.2f}%"
+        )
+
+
     return result
+
+
+# ============================================================
+# MODEL STATUS
+# ============================================================
+
+def get_model_status():
+
+    model_exists = os.path.exists(
+        MODEL_PATH
+    )
+
+    mapping_exists = os.path.exists(
+        CLASS_NAMES_PATH
+    )
+
+    metadata_exists = os.path.exists(
+        METADATA_PATH
+    )
+
+
+    status = {
+
+        "model_exists":
+            model_exists,
+
+        "class_mapping_exists":
+            mapping_exists,
+
+        "metadata_exists":
+            metadata_exists,
+
+        "ready":
+            (
+                model_exists
+                and mapping_exists
+            )
+
+    }
+
+
+    if metadata_exists:
+
+        metadata = load_metadata()
+
+        status[
+            "model_name"
+        ] = metadata.get(
+            "model_name",
+            "MobileNetV2"
+        )
+
+        status[
+            "validation_accuracy"
+        ] = metadata.get(
+            "validation_accuracy"
+        )
+
+        status[
+            "test_accuracy"
+        ] = metadata.get(
+            "test_accuracy"
+        )
+
+
+    return status
+
+
+# ============================================================
+# COMMAND LINE TEST
+# ============================================================
+
+if __name__ == "__main__":
+
+    print(
+        "\n"
+        + "=" * 60
+    )
+
+    print(
+        "       ECOSORT AI PREDICTION TEST"
+    )
+
+    print(
+        "=" * 60
+    )
+
+
+    status = get_model_status()
+
+
+    print(
+        "\nModel status:"
+    )
+
+    print(
+        json.dumps(
+            status,
+            indent=4
+        )
+    )
+
+
+    if not status["ready"]:
+
+        print(
+            "\nModel is not ready."
+        )
+
+        print(
+            "Run train.py first."
+        )
+
+        raise SystemExit
+
+
+    print(
+        "\nPrediction engine ready."
+    )
+
+    print(
+        "\nUsage:"
+    )
+
+    print(
+        "python predict.py path/to/image.jpg"
+    )
+
+
+    import sys
+
+
+    if len(sys.argv) > 1:
+
+        image_path = sys.argv[1]
+
+
+        if not os.path.exists(
+            image_path
+        ):
+
+            print(
+                f"\nImage not found: "
+                f"{image_path}"
+            )
+
+            raise SystemExit(1)
+
+
+        result = predict_image(
+            image_path
+        )
+
+
+        print(
+            "\n"
+            + "=" * 60
+        )
+
+        print(
+            "PREDICTION RESULT"
+        )
+
+        print(
+            "=" * 60
+        )
+
+
+        print(
+            json.dumps(
+                result,
+                indent=4,
+                ensure_ascii=False
+            )
+        )
+        
+        
+        
+# ============================================================
+# FLASK COMPATIBILITY FUNCTIONS
+# ============================================================
+
+ALLOWED_EXTENSIONS = {
+    "jpg",
+    "jpeg",
+    "png",
+    "webp"
+}
+
+
+def is_model_trained():
+    """
+    Check whether the trained model and class mapping exist.
+    """
+
+    return (
+        os.path.exists(MODEL_PATH)
+        and os.path.exists(CLASS_NAMES_PATH)
+    )
+
+
+def get_model_metadata():
+    """
+    Return model metadata for the Flask application.
+    """
+
+    metadata = load_metadata()
+
+    if not metadata:
+        return {
+            "model_name": "MobileNetV2",
+            "trained": is_model_trained()
+        }
+
+    return metadata
+
+
+def predict_waste(image_source):
+    """
+    Compatibility wrapper used by app.py.
+
+    The Flask application can call:
+
+        predict_waste(image)
+
+    while the actual prediction engine uses:
+
+        predict_image(image)
+    """
+
+    return predict_image(image_source)
+
+
+def allowed_file(filename):
+    """
+    Check whether an uploaded file is supported.
+    """
+
+    if not filename:
+        return False
+
+    if "." not in filename:
+        return False
+
+    extension = filename.rsplit(
+        ".",
+        1
+    )[1].lower()
+
+    return extension in ALLOWED_EXTENSIONS
