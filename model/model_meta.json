@@ -1,0 +1,17 @@
+{
+  "trained": true,
+  "model_name": "MobileNetV2 Transfer Learning",
+  "classes": [
+    "cardboard",
+    "glass",
+    "metal",
+    "paper",
+    "plastic",
+    "trash"
+  ],
+  "dataset_images": 60,
+  "val_accuracy": 100.0,
+  "val_loss": 0.2111,
+  "training_time_minutes": 0.8,
+  "trained_timestamp": "2026-09-29 12:37:11"
+}

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics & Metrics — EcoSort AI{% endblock %}
+
+{% block content %}
+
+<div class="section-header" style="margin-bottom: 28px;">
+  <h1 class="section-title" style="font-size: 1.8rem; font-weight: 800;">Analytics Dashboard</h1>
+  <p class="section-subtitle">Real-time classification statistics and waste segregation metrics.</p>
+</div>
+
+<!-- Statistics Cards -->
+<section class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon-wrapper">
+      <i data-lucide="layers"></i>
+    </div>
+    <div class="stat-content">
+      <span class="stat-value">{{ stats.total_scans }}</span>
+      <span class="stat-label">Total Scans</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon-wrapper" style="background: rgba(16, 185, 129, 0.15); color: #10B981;">
+      <i data-lucide="recycle"></i>
+    </div>
+    <div class="stat-content">
+      <span class="stat-value">{{ stats.recyclable_count }}</span>
+      <span class="stat-label">Recyclable Items</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon-wrapper" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B;">
+      <i data-lucide="trash-2"></i>
+    </div>
+    <div class="stat-content">
+      <span class="stat-value">{{ stats.general_waste_count }}</span>
+      <span class="stat-label">General Waste</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon-wrapper" style="background: rgba(59, 130, 246, 0.15); color: #3B82F6;">
+      <i data-lucide="award"></i>
+    </div>
+    <div class="stat-content">
+      <span class="stat-value">{{ stats.avg_confidence }}%</span>
+      <span class="stat-label">Avg Confidence</span>
+    </div>
+  </div>
+</section>
+
+{% if stats.total_scans == 0 %}
+<div class="history-table-container">
+  <div class="empty-state">
+    <div class="empty-icon">📊</div>
+    <h2 class="empty-title">Not enough data yet</h2>
+    <p class="empty-desc">Scan a few waste items to generate real-time distribution charts and analytics metrics.</p>
+    <a href="{{ url_for('index') }}#scannerSection" class="btn btn-primary">
+      <i data-lucide="scan"></i>
+      <span>Start Scanning</span>
+    </a>
+  </div>
+</div>
+{% else %}
+
+<div class="analytics-grid">
+  <!-- Chart 1: Category Distribution -->
+  <div class="chart-card">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <h3 style="font-size: 1.1rem; font-weight: 700;">Waste Category Breakdown</h3>
+      <span style="font-size: 0.75rem; background: var(--primary-light); color: var(--primary); padding: 4px 10px; border-radius: 12px; font-weight: 700;">
+        6 Classes
+      </span>
+    </div>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">
+      Distribution of scanned items across all waste material classes.
+    </p>
+    <div class="chart-container">
+      <canvas id="categoryChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Chart 2: Recyclable vs General -->
+  <div class="chart-card">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <h3 style="font-size: 1.1rem; font-weight: 700;">Recyclable vs General Waste</h3>
+      <span style="font-size: 0.75rem; background: rgba(16, 185, 129, 0.15); color: #10B981; padding: 4px 10px; border-radius: 12px; font-weight: 700;">
+        {{ stats.recyclable_percent }}% Recyclable
+      </span>
+    </div>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">
+      Ratio of items suitable for recycling versus general waste disposal.
+    </p>
+    <div class="chart-container">
+      <canvas id="recyclableChart"></canvas>
+    </div>
+  </div>
+</div>
+
+{% endif %}
+
+{% endblock %}

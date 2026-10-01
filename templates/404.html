@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}404 Page Not Found — EcoSort AI{% endblock %}
+
+{% block content %}
+
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; gap: 20px;">
+  <div style="font-size: 6rem; line-height: 1;">♻️</div>
+  <h1 style="font-size: 2.2rem; font-weight: 800; color: var(--dark);">404 — Page Not Found</h1>
+  <p style="font-size: 1.1rem; color: var(--text-muted); max-width: 480px;">
+    Oops! This page went off the recycling line.
+  </p>
+  <a href="{{ url_for('index') }}" class="btn btn-primary" style="margin-top: 12px;">
+    <i data-lucide="home"></i>
+    <span>Back to Dashboard</span>
+  </a>
+</div>
+
+{% endblock %}

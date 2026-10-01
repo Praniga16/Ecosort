@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}About Project — EcoSort AI{% endblock %}
+
+{% block content %}
+
+<div class="section-header" style="margin-bottom: 32px;">
+  <div class="badge-tag">COLLEGE MINI-PROJECT PRESENTATION</div>
+  <h1 class="section-title" style="font-size: 2.2rem; font-weight: 800;">EcoSort AI Project Overview</h1>
+  <p class="section-subtitle">Real-Time Waste Segregation System Using CNN and Transfer Learning with MobileNetV2.</p>
+</div>
+
+<!-- Workflow Section -->
+<section style="background: var(--bg-card); border-radius: var(--radius-xl); padding: 32px; border: 1px solid var(--border-color); margin-bottom: 32px;">
+  <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--dark); margin-bottom: 8px;">How It Works</h2>
+  <p style="font-size: 0.9rem; color: var(--text-muted);">End-to-end computer vision pipeline from input image to disposal recommendation.</p>
+
+  <div class="workflow-grid">
+    <div class="workflow-step">
+      <div class="step-num">01</div>
+      <div class="step-title">Capture</div>
+      <div class="step-desc">Upload or snapshot waste image via browser camera.</div>
+    </div>
+    <div class="workflow-step">
+      <div class="step-num">02</div>
+      <div class="step-title">Preprocess</div>
+      <div class="step-desc">Validate format, convert to RGB, resize to 224x224.</div>
+    </div>
+    <div class="workflow-step">
+      <div class="step-num">03</div>
+      <div class="step-title">Analyze</div>
+      <div class="step-desc">Extract deep feature maps using MobileNetV2 base.</div>
+    </div>
+    <div class="workflow-step">
+      <div class="step-num">04</div>
+      <div class="step-title">Classify</div>
+      <div class="step-desc">Compute Softmax probabilities for 6 waste categories.</div>
+    </div>
+    <div class="workflow-step">
+      <div class="step-num">05</div>
+      <div class="step-title">Recommend</div>
+      <div class="step-desc">Output confidence rating and actionable recycling advice.</div>
+    </div>
+  </div>
+</section>
+
+<!-- Overview & Problem / Solution Grid -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-bottom: 32px;">
+  <div style="background: var(--bg-card); border-radius: var(--radius-xl); padding: 28px; border: 1px solid var(--border-color);">
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; color: var(--danger);">
+      <i data-lucide="alert-triangle" style="width: 24px; height: 24px;"></i>
+      <h2 style="font-size: 1.2rem; font-weight: 700;">Problem Statement</h2>
+    </div>
+    <p style="font-size: 0.9rem; color: var(--text-main); line-height: 1.6;">
+      Rapid urban growth has led to massive solid waste accumulation. Improper waste segregation at the source leads to recyclable materials filling up landfills, causing environmental degradation, toxic pollution, and economic loss. Manual sorting is slow, unsafe, and prone to human error.
+    </p>
+  </div>
+
+  <div style="background: var(--bg-card); border-radius: var(--radius-xl); padding: 28px; border: 1px solid var(--border-color);">
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; color: var(--primary);">
+      <i data-lucide="shield-check" style="width: 24px; height: 24px;"></i>
+      <h2 style="font-size: 1.2rem; font-weight: 700;">The AI Solution</h2>
+    </div>
+    <p style="font-size: 0.9rem; color: var(--text-main); line-height: 1.6;">
+      EcoSort AI leverages Deep Learning and Transfer Learning with MobileNetV2 pretrained on ImageNet to automate real-time waste classification into six primary classes. By combining high accuracy, low latency inference, and an intuitive web UI, it provides immediate disposal guidance.
+    </p>
+  </div>
+</div>
+
+<!-- Architecture & Dataset Details -->
+<section style="background: var(--bg-card); border-radius: var(--radius-xl); padding: 32px; border: 1px solid var(--border-color); margin-bottom: 32px;">
+  <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--dark); margin-bottom: 16px;">
+    Machine Learning Architecture & Dataset
+  </h2>
+  
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <div>
+      <h3 style="font-size: 1rem; font-weight: 700; color: var(--primary); margin-bottom: 8px;">
+        MobileNetV2 Transfer Learning
+      </h3>
+      <ul style="font-size: 0.88rem; color: var(--text-main); padding-left: 20px; line-height: 1.8;">
+        <li><strong>Base Network:</strong> MobileNetV2 pretrained on ImageNet (inverted residual bottleneck architecture).</li>
+        <li><strong>Input Resolution:</strong> 224 &times; 224 &times; 3 RGB pixels.</li>
+        <li><strong>Data Augmentation:</strong> Random horizontal flip, rotation (20%), zoom (20%), and contrast adjustment.</li>
+        <li><strong>Custom Head:</strong> GlobalAveragePooling2D &rarr; Dropout (0.3) &rarr; Dense (128, ReLU) &rarr; Dropout (0.2) &rarr; Softmax (6 classes).</li>
+        <li><strong>Optimizer:</strong> Adam (lr = 0.001 feature extraction, lr = 1e-5 fine-tuning).</li>
+      </ul>
+    </div>
+
+    <div>
+      <h3 style="font-size: 1rem; font-weight: 700; color: var(--primary); margin-bottom: 8px;">
+        TrashNet Dataset Classes
+      </h3>
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 0.85rem;">
+        <div style="background: var(--bg-page); padding: 10px 14px; border-radius: 8px; font-weight: 600;">📦 Cardboard (Recyclable)</div>
+        <div style="background: var(--bg-page); padding: 10px 14px; border-radius: 8px; font-weight: 600;">🫙 Glass (Recyclable)</div>
+        <div style="background: var(--bg-page); padding: 10px 14px; border-radius: 8px; font-weight: 600;">🥫 Metal (Recyclable)</div>
+        <div style="background: var(--bg-page); padding: 10px 14px; border-radius: 8px; font-weight: 600;">📄 Paper (Recyclable)</div>
+        <div style="background: var(--bg-page); padding: 10px 14px; border-radius: 8px; font-weight: 600;">🥤 Plastic (Recyclable)</div>
+        <div style="background: var(--bg-page); padding: 10px 14px; border-radius: 8px; font-weight: 600;">🗑️ Trash (General Waste)</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Future Scope Section -->
+<section style="background: linear-gradient(135deg, var(--deep-bg) 0%, var(--dark) 100%); color: #FFFFFF; border-radius: var(--radius-xl); padding: 36px;">
+  <h2 style="font-size: 1.4rem; font-weight: 800; color: #2DD496; margin-bottom: 12px;">
+    🚀 Future Scope & System Enhancements
+  </h2>
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 20px;">
+    <div style="background: rgba(255, 255, 255, 0.08); padding: 18px; border-radius: 12px; font-size: 0.85rem;">
+      <div style="font-size: 1.2rem; margin-bottom: 6px;">🤖 Smart Bins & IoT</div>
+      Integration with Raspberry Pi microcontroller and servo motors for automated lid opening and bin sorting.
+    </div>
+    <div style="background: rgba(255, 255, 255, 0.08); padding: 18px; border-radius: 12px; font-size: 0.85rem;">
+      <div style="font-size: 1.2rem; margin-bottom: 6px;">⚡ Edge AI Deployment</div>
+      Quantizing the Keras model into TFLite / ONNX formats for microsecond offline inference on low-power devices.
+    </div>
+    <div style="background: rgba(255, 255, 255, 0.08); padding: 18px; border-radius: 12px; font-size: 0.85rem;">
+      <div style="font-size: 1.2rem; margin-bottom: 6px;">🎥 Conveyor Belt Detection</div>
+      Upgrading from single-image classification to YOLO multi-object real-time object detection on industrial conveyor belts.
+    </div>
+  </div>
+</section>
+
+{% endblock %}

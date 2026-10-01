@@ -1,0 +1,35 @@
+# EcoSort AI - Git Ignore
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.env
+
+# Flask & Uploads
+static/uploads/*
+!static/uploads/.gitkeep
+
+# Models & Weights
+model/*.keras
+model/*.h5
+!model/.gitkeep
+
+# Dataset images (dataset can be large)
+dataset/*/*
+!dataset/*/.gitkeep
+
+# OS generated files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+__MACOSX/
+
+# Downloaded dataset zip & extracted folder
+dataset-resized/
+dataset-resized.zip
+
+# Local prediction history
+data/predictions.json
