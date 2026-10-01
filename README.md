@@ -1,4 +1,4 @@
-# ♻️ EcoSort AI — Real-Time Waste Segregation System Using CNN & Transfer Learning
+#EcoSort AI - Real-Time Waste Segregation System using MobileNetV2 Transfer Learning.
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-3.0%2B-green.svg)](https://flask.palletsprojects.com/)
